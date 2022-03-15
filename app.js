@@ -42,7 +42,7 @@ mongoose
   )
   .then(() => {
     console.log('Database connected succcessfully');
-    app.listen(process.env.PORT || 3000, '192.168.8.101');
+    app.listen(process.env.PORT || 3000);
   })
   .catch((err) => {
     console.log(err);
