@@ -1,0 +1,18 @@
+{
+  "env": {
+    "PORT": 5000,
+    "MONGO_USER": "raheem",
+    "MONGO_PASSWORD": "raheem",
+    "MONGO_DEFAULT_DATABASE": "YctBiometric",
+    "STRIPE_SECRET_KEY": "sk_test_51IwvJoJe2ZuBrbA8W9nQ3lhbP9iH8hseNpqzAOwkbaEohDf8BfGVFJe6O20QWX1EjumppuHNc4SRI0O0XxQocifn00Ujw2fNjz",
+    "STRIPE_PUBLIC_KEY": "pk_test_51IwvJoJe2ZuBrbA8cGNV9yvaDcTgQUDGW8RJF5m1IlaHAHnnNUfX2GslRbysl0eCCrFg34bCYoSdpYklrJE9gf6R00a5Hxx4D6",
+    "FRONTEND_ADDRESS": "https://yct-attendance-collator.herokuapp.com",
+    "ACCESS_ORIGIN": "*",
+    "CLIENT_ID": "889876418133-7v5u0dpe1bheeg3atfg8lvaf2lshj297.apps.googleusercontent.com",
+    "CLIENT_SECRET": "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",
+    "REDIRECT_URI": "https://yct-attendance-collator.herokuapp.com",
+    "SERVER_ADDRESS": "http://192.168.8.101:5000",
+    "NODEMAIL_GMAIL": "yraheem21@gmail.com",
+    "NODEMAILER_PASS": "Ogai197300"
+  }
+}
