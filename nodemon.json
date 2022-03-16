@@ -10,7 +10,7 @@
     "ACCESS_ORIGIN": "*",
     "CLIENT_ID": "889876418133-7v5u0dpe1bheeg3atfg8lvaf2lshj297.apps.googleusercontent.com",
     "CLIENT_SECRET": "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",
-    "REDIRECT_URI": "https://yct-attendance-collator.herokuapp.com",
+    "REDIRECT_URI": "REDIRECT_URI",
     "SERVER_ADDRESS": "http://192.168.8.101:5000",
     "NODEMAIL_GMAIL": "yraheem21@gmail.com",
     "NODEMAILER_PASS": "Ogai197300"
