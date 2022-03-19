@@ -4,6 +4,17 @@ const jwkToPem = require('jwk-to-pem')
 
 // import { COSEKEYS, COSEKTY, COSECRV } from './convertCOSEtoPKCS';
 
+const COSECRV = {
+  // alg: -7
+  1: 'p256',
+  // alg: -35
+  2: 'p384',
+  // alg: -36
+  3: 'p521',
+  // alg: -8
+  6: 'ed25519',
+};
+
 exports.convertPublicKeyToPEM = (publicKey) => {
   let struct;
   try {

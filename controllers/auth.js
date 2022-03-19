@@ -22,6 +22,7 @@ const {
   convertPublicKeyToPEM,
 } = require('./../middleware/webauthn/convertPkToPem');
 const { verifySignature } = require('../middleware/webauthn/verifySignature');
+const { use } = require('bcrypt/promises');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -30,8 +31,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.NODEMAILER_PASS,
   },
 });
-
-// const toHash = require('./../middleware/hashed');
 
 exports.signup = async (req, res, next) => {
   try {
@@ -51,7 +50,6 @@ exports.signup = async (req, res, next) => {
     const user = new User({
       email: email,
       name: name,
-      // admin: false,
       password: hashedPassword,
       cart: { items: [] },
     });
@@ -161,7 +159,6 @@ exports.login = async (req, res, next) => {
       email: loadedUser.email,
       name: loadedUser.name,
       id: loadedUser._id.toString(),
-      isAdmin: loadedUser.admin || false,
       token: token,
       expiresIn: 7200,
     });
@@ -226,7 +223,6 @@ exports.googleAuth = async (req, res, next) => {
       email: loadedUser.email,
       name: loadedUser.name,
       id: loadedUser._id.toString(),
-      isAdmin: loadedUser.admin || false,
       token: token,
       expiresIn: 7200,
     });
@@ -280,39 +276,7 @@ exports.webauthnReg = async (req, res, next) => {
           },
           {
             type: 'public-key',
-            alg: -8,
-          },
-          {
-            type: 'public-key',
-            alg: -35,
-          },
-          {
-            type: 'public-key',
-            alg: -36,
-          },
-          {
-            type: 'public-key',
-            alg: -37,
-          },
-          {
-            type: 'public-key',
-            alg: -38,
-          },
-          {
-            type: 'public-key',
-            alg: -39,
-          },
-          {
-            type: 'public-key',
             alg: -257,
-          },
-          {
-            type: 'public-key',
-            alg: -258,
-          },
-          {
-            type: 'public-key',
-            alg: -259,
           },
         ],
 
@@ -480,8 +444,29 @@ exports.webauthnLoginVerification = async (req, res, next) => {
     const sigVerified = verifySignature(signature, signatureBase, publicKey);
 
     if (sigVerified) {
-      res.status(201).send({ message: 'User Authenticated' });
+      const error = new Error('Invalid biometric credential');
+      error.statusCode = 401;
+      throw error;
     }
+
+    const token = jwt.sign(
+      {
+        email: user.email,
+        userId: user._id.toString(),
+      },
+      'somesuperraheemsecret',
+      { expiresIn: '2h' },
+    );
+
+    res
+      .status(201)
+      .send({
+        email: user.email,
+        name: user.name,
+        id: user._id.toString(),
+        token: token,
+        expiresIn: 7200,
+      });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
