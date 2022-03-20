@@ -22,7 +22,15 @@ router.post(
         }
         return userDoc;
       }),
-    body('fullName', 'Enter Full Name').trim().isLength({ min: 5 }),
+    body('fullName', 'Enter Full Name')
+      .trim()
+      .isLength({ min: 5 })
+      .custom((value) => {
+        if (value.split(' ').length < 2) {
+          throw new Error('Enter Full Name')
+        }
+        return true;
+      }),
     body('password', 'Password not strong')
       .trim()
       .isLength({ min: 8 })
@@ -89,6 +97,7 @@ router.post(
   ],
   authController.webauthnLogin,
 );
+
 router.post(
   '/webauthn-login-verification',
   authController.webauthnLoginVerification,

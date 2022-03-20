@@ -326,7 +326,7 @@ exports.webauthnRegVerification = async (req, res, next) => {
       clientDataJSON.type !== 'webauthn.create' &&
       clientDataJSON.origin !== process.env.FRONTEND_ADDRESS
     ) {
-      const error = new Error('Invalid origin!');
+      const error = new Error('Invalid origin');
       error.statusCode = 401;
       throw error;
     }
@@ -439,11 +439,9 @@ exports.webauthnLoginVerification = async (req, res, next) => {
     );
     const signature = base64url.toBuffer(credential.response.signature);
 
-    // console.log(credential)
-
     const sigVerified = verifySignature(signature, signatureBase, publicKey);
 
-    if (sigVerified) {
+    if (!sigVerified) {
       const error = new Error('Invalid biometric credential');
       error.statusCode = 401;
       throw error;
