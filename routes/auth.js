@@ -88,7 +88,7 @@ router.post(
       .withMessage('Please enter a valid email')
       .normalizeEmail()
       .custom(async (value, { req }) => {
-        console('E-mail value: ' + value)
+        console.log('E-mail value: ' + value)
         const userDoc = await User.findOne({ email: value });
         if (!userDoc) {
           return Promise.reject('E-mail does not exist!');
