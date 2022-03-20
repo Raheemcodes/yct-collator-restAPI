@@ -189,8 +189,8 @@ exports.googleAuth = async (req, res, next) => {
 
     const payload = ticket.getPayload();
     const password = payload.sub;
-    console.log(password);
     const user = await User.findOne({ email: payload.email });
+
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 12);
       const user = new User({
@@ -199,6 +199,7 @@ exports.googleAuth = async (req, res, next) => {
         password: hashedPassword,
         cart: { items: [] },
       });
+
       await user.save();
     } else {
       const isEqual = await bcrypt.compare(password, user.password);
@@ -352,8 +353,6 @@ exports.webauthnRegVerification = async (req, res, next) => {
     );
     const credentialPublicKey = base64url(authData.slice(pointer));
 
-    console.log(cbor.decodeFirstSync(authData.slice(pointer)));
-
     user.credentialID = credentialID;
     user.credentialPublicKey = credentialPublicKey;
 
@@ -441,8 +440,6 @@ exports.webauthnLoginVerification = async (req, res, next) => {
 
     const sigVerified = verifySignature(signature, signatureBase, publicKey);
 
-    console.log(sigVerified)
-
     if (!sigVerified) {
       const error = new Error('Invalid biometric credential');
       error.statusCode = 401;
@@ -458,15 +455,13 @@ exports.webauthnLoginVerification = async (req, res, next) => {
       { expiresIn: '2h' },
     );
 
-    res
-      .status(201)
-      .send({
-        email: user.email,
-        name: user.name,
-        id: user._id.toString(),
-        token: token,
-        expiresIn: 7200,
-      });
+    res.status(201).send({
+      email: user.email,
+      name: user.name,
+      id: user._id.toString(),
+      token: token,
+      expiresIn: 7200,
+    });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
