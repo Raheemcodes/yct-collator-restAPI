@@ -27,7 +27,7 @@ router.post(
       .isLength({ min: 5 })
       .custom((value) => {
         if (value.split(' ').length < 2) {
-          throw new Error('Enter Full Name')
+          throw new Error('Enter Full Name');
         }
         return true;
       }),
@@ -88,7 +88,6 @@ router.post(
       .withMessage('Please enter a valid email')
       .normalizeEmail()
       .custom(async (value, { req }) => {
-        console.log('E-mail value: ' + value)
         const userDoc = await User.findOne({ email: value });
         if (!userDoc) {
           return Promise.reject('E-mail does not exist!');
@@ -101,6 +100,19 @@ router.post(
 
 router.post(
   '/webauthn-login-verification',
+  [
+    check('email')
+      .isEmail()
+      .withMessage('Please enter a valid email')
+      .normalizeEmail()
+      .custom(async (value, { req }) => {
+        const userDoc = await User.findOne({ email: req.body.email });
+        if (!userDoc) {
+          return Promise.reject('E-mail does not exist!');
+        }
+        return userDoc;
+      }),
+  ],
   authController.webauthnLoginVerification,
 );
 
