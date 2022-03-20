@@ -450,10 +450,8 @@ exports.webauthnLoginVerification = async (req, res, next) => {
   try {
     const credential = req.body.credential;
     const email = req.body.email;
-
-    
     const user = await User.findOne({ email });
-    console.log(credential, user);
+    
     if (!user) {
       const error = new Error('User not found');
       error.statusCode = 401;
