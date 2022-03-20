@@ -450,6 +450,9 @@ exports.webauthnLoginVerification = async (req, res, next) => {
   try {
     const credential = req.body.credential;
     const userId = base64url.decode(credential.response.userHandle);
+    
+    console.log(credential, userId)
+
     const user = await User.findById(userId);
     if (!user) {
       const error = new Error('User not found');
