@@ -441,6 +441,8 @@ exports.webauthnLoginVerification = async (req, res, next) => {
 
     const sigVerified = verifySignature(signature, signatureBase, publicKey);
 
+    console.log(sigVerified)
+
     if (!sigVerified) {
       const error = new Error('Invalid biometric credential');
       error.statusCode = 401;
