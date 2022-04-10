@@ -3,26 +3,17 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cbor = require('cbor');
 const { default: base64url } = require('base64url');
-
 const { OAuth2Client } = require('google-auth-library');
 const CLIENT_ID = process.env.CLIENT_ID;
-
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-
 const REDIRECT_URI = process.env.REDIRECT_URI;
-
 const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-
 const nodemailer = require('nodemailer');
 const { validationResult } = require('express-validator');
-
 const User = require('../models/user');
-const { toHash } = require('../middleware/webauthn/hashed');
-const {
-  convertPublicKeyToPEM,
-} = require('./../middleware/webauthn/convertPkToPem');
-const { verifySignature } = require('../middleware/webauthn/verifySignature');
-const { use } = require('bcrypt/promises');
+const { toHash } = require('../util/webauthn/hashed');
+const { convertPublicKeyToPEM } = require('./../util/webauthn/convertPkToPem');
+const { verifySignature } = require('../util/webauthn/verifySignature');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -253,8 +244,10 @@ exports.webauthnReg = async (req, res, next) => {
       }
 
       const challenge = buf.toString('hex');
-      user.challenge = challenge;
-      user.resetChallengeExpiration = Date.now() + 60000;
+      user.webauthn = {
+        challenge,
+        resetChallengeExpiration: Date.now() + 60000,
+      };
       user.save();
 
       const publicKeyCredentialCreationOptions = {
@@ -345,8 +338,8 @@ exports.webauthnRegVerification = async (req, res, next) => {
     const clientDataJSON = JSON.parse(decodedClientData);
 
     const user = await User.findOne({
-      challenge: base64url.decode(clientDataJSON.challenge),
-      resetChallengeExpiration: { $gt: Date.now() },
+      'webauthn.challenge': base64url.decode(clientDataJSON.challenge),
+      'webauthn.resetChallengeExpiration': { $gt: Date.now() },
     });
 
     if (!user) {
@@ -385,9 +378,8 @@ exports.webauthnRegVerification = async (req, res, next) => {
     );
     const credentialPublicKey = base64url(authData.slice(pointer));
 
-    user.credentialID = credentialID;
-    user.credentialPublicKey = credentialPublicKey;
-
+    user.webauthn.credentialID = credentialID;
+    user.webauthn.credentialPublicKey = credentialPublicKey;
     user.save();
 
     res.status(201).send({ message: 'Biometric registration sucessful' });
@@ -414,8 +406,8 @@ exports.webauthnLogin = async (req, res, next) => {
 
     await crypto.randomBytes(32, (err, buf) => {
       const challenge = buf.toString('hex');
-      user.challenge = challenge;
-      user.resetChallengeExpiration = Date.now() + 60000;
+      user.webauthn.challenge = challenge;
+      user.webauthn.resetChallengeExpiration = Date.now() + 60000;
       user.save();
 
       const publicKeyCredentialGetOptions = {
@@ -425,7 +417,7 @@ exports.webauthnLogin = async (req, res, next) => {
 
         allowCredentials: [
           {
-            id: user.credentialID,
+            id: user.webauthn.credentialID,
 
             type: 'public-key',
           },
@@ -449,11 +441,28 @@ exports.webauthnLogin = async (req, res, next) => {
 exports.webauthnLoginVerification = async (req, res, next) => {
   try {
     const credential = req.body.credential;
-    const email = req.body.email;
-    const user = await User.findOne({ email });
-    
+
+    const decodedClientData = base64url.decode(
+      credential.response.clientDataJSON,
+    );
+    const clientDataJSON = JSON.parse(decodedClientData);
+
+    const user = await User.findOne({
+      'webauthn.challenge': base64url.decode(clientDataJSON.challenge),
+      'webauthn.resetChallengeExpiration': { $gt: Date.now() },
+    });
+
     if (!user) {
       const error = new Error('User not found');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    if (
+      clientDataJSON.type !== 'webauthn.create' &&
+      clientDataJSON.origin !== process.env.FRONTEND_ADDRESS
+    ) {
+      const error = new Error('Invalid origin');
       error.statusCode = 401;
       throw error;
     }
@@ -467,7 +476,7 @@ exports.webauthnLoginVerification = async (req, res, next) => {
 
     const signatureBase = Buffer.concat([authDataBuffer, clientDataHash]);
     const publicKey = convertPublicKeyToPEM(
-      base64url.toBuffer(user.credentialPublicKey),
+      base64url.toBuffer(user.webauthn.credentialPublicKey),
     );
     const signature = base64url.toBuffer(credential.response.signature);
 
