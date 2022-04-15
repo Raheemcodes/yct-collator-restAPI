@@ -159,8 +159,6 @@ userSchema.methods.addProgramme = async function (
     ];
 
     this.sessions[sessionIdx].programmes = programmes;
-
-    return programmes
   }
 
   if (progIdx > -1 && courseIdx == -1) {
