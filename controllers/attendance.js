@@ -65,7 +65,7 @@ exports.createRecord = async (req, res, next) => {
       totalStudent,
     );
 
-    res.status(201).send({ message: 'Session successfully created' });
+    res.status(201).send({ sessions: user.sessions });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
