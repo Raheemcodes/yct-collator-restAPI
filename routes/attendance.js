@@ -3,10 +3,44 @@ const attendanceController = require('../controllers/attendance');
 const { body } = require('express-validator');
 
 const isAuth = require('../middleware/is-auth');
+const User = require('../models/User');
 
 const router = express.Router();
 
 router.get('/sessions', isAuth, attendanceController.getSessions);
+
+router.post(
+  '/create-attandance',
+  isAuth,
+  [
+    body(['session', 'programme', 'course'], 'Some fields are invalid')
+      .trim()
+      .isLength({ min: 2 })
+      .custom(async (value, { req }) => {
+        const user = await User.findById(req.userId);
+        const sessionTitle = req.body.session;
+        const programme = req.body.programme;
+        const course = req.body.course;
+
+        const hasSession = await user.sessions.find(
+          (session) => session.title == sessionTitle,
+        );
+
+        const hasProgramme = await hasSession.programmes.find(
+          (prog) => prog.title == programme,
+        );
+
+        const hasCourse = hasProgramme.courses.find(
+          (cour) => cour.title == course,
+        );
+
+        if (!hasCourse) throw new Error('Some fields are not in record!');
+        return true;
+      }),
+    body(['hours', 'minutes'], 'Some fields are invalid').isNumeric()
+  ],
+  attendanceController.createAttendance,
+);
 
 router.post(
   '/create-record',
@@ -17,7 +51,7 @@ router.post(
       'Some fields are empty',
     )
       .trim()
-      .isLength({ min: 1 }),
+      .isLength({ min: 2 }),
     body(['indexNumber', 'totalStudent'], 'Some fields are empty')
       .trim()
       .isNumeric()

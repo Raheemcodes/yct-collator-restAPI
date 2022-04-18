@@ -50,10 +50,12 @@ const userSchema = new Schema({
               ],
               attendanceRecords: [
                 {
-                  date: { type: Date, required: true },
+                  date: { type: String, required: true },
+                  token: { type: String, required: true },
+                  tokenResetExpiration: { type: Date, required: true },
                   attendance: [
                     {
-                      name: { type: String, required: true },
+                      name: String,
                       matricNumber: { type: String, required: true },
                       status: { type: String, required: true },
                     },
@@ -134,7 +136,6 @@ userSchema.methods.addProgramme = async function (
     throw error;
   }
 
-
   let students = [];
 
   for (let i = 0; i < totalStudent; i++) {
@@ -162,7 +163,6 @@ userSchema.methods.addProgramme = async function (
   }
 
   if (progIdx > -1 && courseIdx == -1) {
-    console.log(course);
     const courses = [
       ...this.sessions[sessionIdx].programmes[progIdx].courses,
       {
@@ -175,6 +175,67 @@ userSchema.methods.addProgramme = async function (
   }
 
   this.save();
+};
+
+userSchema.methods.createAttendance = async function (
+  session,
+  programme,
+  course,
+  token,
+  tokenResetExpiration,
+) {
+  // const sessionIdx = await this.sessions.findIndex(
+  //   (sess) => sess.title == session,
+  // );
+  // const progIdx = await this.sessions[sessionIdx].programmes.findIndex(
+  //   (prog) => prog.title == programme,
+  // );
+  // const courseIdx = await this.sessions[sessionIdx].programmes[
+  //   progIdx
+  // ].courses.findIndex((findCourse) => findCourse.title == course);
+
+  // const foundCourse = await this.sessions[sessionIdx].programmes[progIdx]
+  //   .courses[courseIdx];
+
+  const foundSession = this.sessions.find((sess) => sess.title == session);
+
+  const foundProgramme = foundSession.programmes.find(
+    (prog) => prog.title == programme,
+  );
+
+  const foundCourse = foundProgramme.courses.find(
+    (cour) => cour.title == course,
+  );
+
+  const attendance = [...foundCourse.students].map((student) => {
+    return {
+      matricNumber: student.matricNumber,
+      status: 'Absent',
+    };
+  });
+
+  const attendanceRecords = [
+    ...foundCourse.attendanceRecords,
+    {
+      date: new Date().toLocaleDateString(),
+      token,
+      tokenResetExpiration,
+      attendance,
+    },
+  ];
+
+  foundCourse.attendanceRecords = attendanceRecords;
+  const last = foundCourse.attendanceRecords.length - 1;
+
+  await this.save();
+
+  console.log(foundCourse.attendanceRecords);
+  return {
+    sessionId: foundSession._id,
+    programmeId: foundProgramme._id,
+    courseId: foundCourse._id,
+    attendanceRecordId: foundCourse.attendanceRecords[last]._id,
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);
