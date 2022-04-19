@@ -10,10 +10,11 @@ const REDIRECT_URI = process.env.REDIRECT_URI;
 const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 const nodemailer = require('nodemailer');
 const { validationResult } = require('express-validator');
-const User = require('../models/User');
+
 const { toHash } = require('../util/webauthn/hashed');
 const { convertPublicKeyToPEM } = require('./../util/webauthn/convertPkToPem');
 const { verifySignature } = require('../util/webauthn/verifySignature');
+const User = require('../models/User');
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
