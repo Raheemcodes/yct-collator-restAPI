@@ -35,6 +35,12 @@ router.post(
         );
 
         if (!hasCourse) throw new Error('Some fields are not in record!');
+        
+        const lastItem = hasCourse.attendanceRecords.length - 1
+        if (hasCourse.attendanceRecords[lastItem].date == new Date().toLocaleDateString()) {
+          throw new Error(`One attendance per day for a course`);
+        }
+
         return true;
       }),
     body(['hours', 'minutes'], 'Some fields are invalid').isNumeric()

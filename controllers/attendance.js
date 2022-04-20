@@ -50,14 +50,15 @@ exports.createAttendance = async (req, res, next) => {
       const tokenResetExpiration =
         Date.now() + +hours * 60 * 60 * 1000 + +minutes * 60 * 1000;
 
-      // const result = await user.createAttendance(
-      //   session,
-      //   programme,
-      //   course,
-      //   token,
-      //   tokenResetExpiration,
-      // );
-      res.status(201).send({ res: 'result' });
+      const result = await user.createAttendance(
+        session,
+        programme,
+        course,
+        token,
+        tokenResetExpiration,
+      );
+
+      res.status(201).send({ res: result, sessions: user.sessions });
     });
   } catch (err) {
     if (!err.statusCode) {

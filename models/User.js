@@ -82,7 +82,7 @@ userSchema.methods.addSession = async function (
   let students = [];
 
   for (let i = 0; i < totalStudent; i++) {
-    const matricNumber = firstMatric + (indexNumber + i);
+    const matricNumber = firstMatric + (+indexNumber + i);
     const hashedPassword = await bcrypt.hash(matricNumber, 12);
     const student = { matricNumber, password: hashedPassword };
     students.push(student);
@@ -139,7 +139,7 @@ userSchema.methods.addProgramme = async function (
   let students = [];
 
   for (let i = 0; i < totalStudent; i++) {
-    const matricNumber = firstMatric + (indexNumber + i);
+    const matricNumber = firstMatric + (+indexNumber + i);
     const hashedPassword = await bcrypt.hash(matricNumber, 12);
     const student = { matricNumber, password: hashedPassword };
     students.push(student);
@@ -184,19 +184,6 @@ userSchema.methods.createAttendance = async function (
   token,
   tokenResetExpiration,
 ) {
-  // const sessionIdx = await this.sessions.findIndex(
-  //   (sess) => sess.title == session,
-  // );
-  // const progIdx = await this.sessions[sessionIdx].programmes.findIndex(
-  //   (prog) => prog.title == programme,
-  // );
-  // const courseIdx = await this.sessions[sessionIdx].programmes[
-  //   progIdx
-  // ].courses.findIndex((findCourse) => findCourse.title == course);
-
-  // const foundCourse = await this.sessions[sessionIdx].programmes[progIdx]
-  //   .courses[courseIdx];
-
   const foundSession = this.sessions.find((sess) => sess.title == session);
 
   const foundProgramme = foundSession.programmes.find(
@@ -229,7 +216,6 @@ userSchema.methods.createAttendance = async function (
 
   await this.save();
 
-  console.log(foundCourse.attendanceRecords);
   return {
     sessionId: foundSession._id,
     programmeId: foundProgramme._id,
