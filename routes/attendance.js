@@ -54,6 +54,81 @@ router.post(
 );
 
 router.post(
+  '/student-attendance',
+  [
+    body(
+      ['userId', 'sessionId', 'progId', 'courseId', 'recordId'],
+      'Invalid Link',
+    )
+      .trim()
+      .isLength({ min: 12 })
+      .custom(async (value, { req }) => {
+        const userId = req.body.userId;
+
+        const user = await User.findById(userId);
+        if (!user) throw new Error('Invalid Link');
+        return true;
+      }),
+  ],
+  attendanceController.postStudentAttendance,
+);
+
+router.post(
+  '/mark-attendance',
+  isAuth,
+  [
+    body(['sessionId', 'progId', 'courseId', 'recordId', 'id'], 'Invalid URL')
+      .trim()
+      .isLength({ min: 12 })
+      .custom(async (value, { req }) => {
+        const user = await User.findById(req.userId);
+
+        if (!user) throw new Error('Invalid URL');
+        return true;
+      }),
+    body('status')
+      .trim()
+      .custom((value) => {
+        if (value != 'true' && value != 'false') {
+          throw new Error('Invalid status');
+        }
+
+        return true;
+      }),
+  ],
+  attendanceController.markAttendance,
+);
+
+router.post(
+  '/student-mark-attendance',
+  [
+    body(
+      ['userId', 'sessionId', 'progId', 'courseId', 'recordId', 'id', 'token'],
+      'Invalid URL',
+    )
+      .trim()
+      .isLength({ min: 12 })
+      .custom(async (value, { req }) => {
+        const userId = req.body.userId;
+
+        const user = await User.findById(userId);
+        if (!user) throw new Error('Invalid URL');
+        return true;
+      }),
+    body('status')
+      .trim()
+      .custom((value) => {
+        if (value != 'true' && value != 'false') {
+          throw new Error('Invalid status');
+        }
+
+        return true;
+      }),
+  ],
+  attendanceController.studentMarkAttendance,
+);
+
+router.post(
   '/create-record',
   isAuth,
   [

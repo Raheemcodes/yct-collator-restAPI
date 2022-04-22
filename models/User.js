@@ -204,7 +204,7 @@ userSchema.methods.createAttendance = async function (
   const attendanceRecords = [
     ...foundCourse.attendanceRecords,
     {
-      date: new Date().toLocaleDateString(),
+      date: new Date().toLocaleString(),
       token,
       tokenResetExpiration,
       attendance,
@@ -222,6 +222,59 @@ userSchema.methods.createAttendance = async function (
     courseId: foundCourse._id,
     attendanceRecordId: foundCourse.attendanceRecords[last]._id,
   };
+};
+
+userSchema.methods.markAttendance = async function (
+  sessionId,
+  progId,
+  courseId,
+  recordId,
+  id,
+  status,
+  token,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+
+  const hasCourse = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  const attendanceRecord = hasCourse.attendanceRecords.find(
+    (record) => record._id == recordId,
+  );
+
+  if (!attendanceRecord) {
+    const error = new Error('Invalid Link');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (attendanceRecord.token !== token && token) {
+    const error = new Error('Invalid Link');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (new Date(attendanceRecord.tokenResetExpiration) < new Date() && token) {
+    const error = new Error('Link has expired');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const attendanceLine = attendanceRecord.attendance.find(
+    (student) => student._id == id,
+  );
+
+
+  status == 'true'
+    ? (attendanceLine.status = 'Present')
+    : (attendanceLine.status = 'Absent');
+
+  this.save();
+
+  return attendanceRecord;
 };
 
 module.exports = mongoose.model('User', userSchema);
