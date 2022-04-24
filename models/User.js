@@ -61,15 +61,12 @@ const userSchema = new Schema({
                   ],
                 },
               ],
-              aggregateAttendance: {
-                numberOfRecords: { type: Number, required: true },
-                aggragateRecord: [
-                  {
-                    matricNumber: { type: String, required: true },
-                    timesPresent: { type: Number, required: true },
-                  },
-                ],
-              },
+              aggregateAttendance: [
+                {
+                  matricNumber: { type: String, required: true },
+                  timesPresent: { type: Number, required: true },
+                },
+              ],
             },
           ],
         },
