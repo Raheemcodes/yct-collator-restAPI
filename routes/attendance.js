@@ -100,35 +100,6 @@ router.post(
 );
 
 router.post(
-  '/student-mark-attendance',
-  [
-    body(
-      ['userId', 'sessionId', 'progId', 'courseId', 'recordId', 'id', 'token'],
-      'Invalid URL',
-    )
-      .trim()
-      .isLength({ min: 12 })
-      .custom(async (value, { req }) => {
-        const userId = req.body.userId;
-
-        const user = await User.findById(userId);
-        if (!user) throw new Error('Invalid URL');
-        return true;
-      }),
-    body('status')
-      .trim()
-      .custom((value) => {
-        if (value != 'true' && value != 'false') {
-          throw new Error('Invalid status');
-        }
-
-        return true;
-      }),
-  ],
-  attendanceController.studentMarkAttendance,
-);
-
-router.post(
   '/create-record',
   isAuth,
   [

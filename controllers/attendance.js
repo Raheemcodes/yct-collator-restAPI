@@ -166,45 +166,6 @@ exports.markAttendance = async (req, res, next) => {
   }
 };
 
-exports.studentMarkAttendance = async (req, res, next) => {
-  try {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      const error = new Error(errors.array()[0].msg);
-      error.statusCode = 422;
-      throw error;
-    }
-
-    const userId = req.body.userId;
-    const sessionId = req.body.sessionId;
-    const progId = req.body.progId;
-    const courseId = req.body.courseId;
-    const recordId = req.body.recordId;
-    const token = req.body.token;
-    const status = req.body.status;
-    const id = req.body.id;
-    const user = await User.findById(userId);
-
-    const attendanceRecord = await user.markAttendance(
-      sessionId,
-      progId,
-      courseId,
-      recordId,
-      id,
-      status,
-      token,
-    );
-
-    res.status(201).send({ attendanceRecord });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.createRecord = async (req, res, next) => {
   try {
     const errors = validationResult(req);

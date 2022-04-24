@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-
+const { default: base64url } = require('base64url');
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
@@ -38,14 +37,13 @@ const userSchema = new Schema({
                 {
                   name: String,
                   matricNumber: { type: String, required: true },
-                  password: {
-                    type: String,
-                    required: true,
+                  isRegistered: { type: Boolean, required: true },
+                  webauthn: {
+                    challenge: String,
+                    resetChallengeExpiration: Date,
+                    credentialID: String,
+                    credentialPublicKey: String,
                   },
-                  challenge: String,
-                  resetChallengeExpiration: Date,
-                  credentialID: String,
-                  credentialPublicKey: String,
                 },
               ],
               attendanceRecords: [
@@ -57,12 +55,21 @@ const userSchema = new Schema({
                     {
                       name: String,
                       matricNumber: { type: String, required: true },
+                      isRegistered: { type: Boolean, required: true },
                       status: { type: String, required: true },
                     },
                   ],
                 },
               ],
-              aggregateAttendance: [],
+              aggregateAttendance: {
+                numberOfRecords: { type: Number, required: true },
+                aggragateRecord: [
+                  {
+                    matricNumber: { type: String, required: true },
+                    timesPresent: { type: Number, required: true },
+                  },
+                ],
+              },
             },
           ],
         },
@@ -83,8 +90,7 @@ userSchema.methods.addSession = async function (
 
   for (let i = 0; i < totalStudent; i++) {
     const matricNumber = firstMatric + (+indexNumber + i);
-    const hashedPassword = await bcrypt.hash(matricNumber, 12);
-    const student = { matricNumber, password: hashedPassword };
+    const student = { matricNumber, isRegistered: false };
     students.push(student);
   }
 
@@ -140,8 +146,7 @@ userSchema.methods.addProgramme = async function (
 
   for (let i = 0; i < totalStudent; i++) {
     const matricNumber = firstMatric + (+indexNumber + i);
-    const hashedPassword = await bcrypt.hash(matricNumber, 12);
-    const student = { matricNumber, password: hashedPassword };
+    const student = { matricNumber, isRegistered: false };
     students.push(student);
   }
 
@@ -197,6 +202,7 @@ userSchema.methods.createAttendance = async function (
   const attendance = [...foundCourse.students].map((student) => {
     return {
       matricNumber: student.matricNumber,
+      isRegistered: student.isRegistered,
       status: 'Absent',
     };
   });
@@ -222,6 +228,92 @@ userSchema.methods.createAttendance = async function (
     courseId: foundCourse._id,
     attendanceRecordId: foundCourse.attendanceRecords[last]._id,
   };
+};
+
+userSchema.methods.findStudent = async function (
+  sessionId,
+  progId,
+  courseId,
+  matricNumber,
+  clientDataJSON,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+
+  const hasCourse = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  let student;
+  if (!clientDataJSON) {
+    student = hasCourse.students.find(
+      (student) => student.matricNumber == matricNumber,
+    );
+  } else {
+    student = hasCourse.students.find((student) => {
+      if (
+        student.webauthn.challenge ==
+          base64url.decode(clientDataJSON.challenge) &&
+        student.webauthn.resetChallengeExpiration > Date.now()
+      ) {
+        return student;
+      }
+    });
+  }
+
+  if (!student) {
+    const error = new Error('User not found');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return student;
+};
+
+userSchema.methods.findAttendanceLine = async function (
+  sessionId,
+  progId,
+  courseId,
+  recordId,
+  id,
+  token,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+
+  const hasCourse = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  const attendanceRecord = hasCourse.attendanceRecords.find(
+    (record) => record._id == recordId,
+  );
+
+  if (!attendanceRecord) {
+    const error = new Error('Invalid Link');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (attendanceRecord.token !== token && token) {
+    const error = new Error('Invalid Link');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  if (new Date(attendanceRecord.tokenResetExpiration) < new Date() && token) {
+    const error = new Error('Link has expired');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const attendanceLine = attendanceRecord.attendance.find(
+    (student) => student._id == id,
+  );
+
+  return { attendanceLine, attendanceRecord };
 };
 
 userSchema.methods.markAttendance = async function (
@@ -266,7 +358,6 @@ userSchema.methods.markAttendance = async function (
   const attendanceLine = attendanceRecord.attendance.find(
     (student) => student._id == id,
   );
-
 
   status == 'true'
     ? (attendanceLine.status = 'Present')

@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const app = express();
 const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
+const studentRoutes = require('./routes/student');
 
 app.use(
   helmet({
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
 
 app.use(authRoutes);
 app.use(attendanceRoutes);
+app.use('/student', studentRoutes);
 
 app.use((error, req, res, next) => {
   const status = error.statusCode || 500;
@@ -40,7 +42,7 @@ mongoose
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    }
+    },
   )
   .then(() => {
     console.log('Database connected succcessfully');
