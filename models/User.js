@@ -63,6 +63,7 @@ const userSchema = new Schema({
               ],
               aggregateAttendance: [
                 {
+                  name: String,
                   matricNumber: { type: String, required: true },
                   timesPresent: { type: Number, required: true },
                 },
@@ -84,11 +85,18 @@ userSchema.methods.addSession = async function (
   totalStudent,
 ) {
   let students = [];
+  let aggregate = [];
 
   for (let i = 0; i < totalStudent; i++) {
     const matricNumber = firstMatric + (+indexNumber + i);
     const student = { matricNumber, isRegistered: false };
     students.push(student);
+  }
+
+  for (let i = 0; i < totalStudent; i++) {
+    const matricNumber = firstMatric + (+indexNumber + i);
+    const student = { matricNumber, timesPresent: 0 };
+    aggregate.push(student);
   }
 
   await this.sessions.push({
@@ -99,7 +107,8 @@ userSchema.methods.addSession = async function (
         courses: [
           {
             title: course,
-            students: students,
+            students,
+            aggregateAttendance: aggregate,
           },
         ],
       },
@@ -140,11 +149,18 @@ userSchema.methods.addProgramme = async function (
   }
 
   let students = [];
+  let aggregate = [];
 
   for (let i = 0; i < totalStudent; i++) {
     const matricNumber = firstMatric + (+indexNumber + i);
     const student = { matricNumber, isRegistered: false };
     students.push(student);
+  }
+
+  for (let i = 0; i < totalStudent; i++) {
+    const matricNumber = firstMatric + (+indexNumber + i);
+    const student = { matricNumber, timesPresent: 0 };
+    aggregate.push(student);
   }
 
   if (progIdx == -1) {
@@ -156,6 +172,7 @@ userSchema.methods.addProgramme = async function (
           {
             title: course,
             students: students,
+            aggregateAttendance: aggregate,
           },
         ],
       },
@@ -356,10 +373,22 @@ userSchema.methods.markAttendance = async function (
     (student) => student._id == id,
   );
 
-  status == 'true'
-    ? (attendanceLine.status = 'Present')
-    : (attendanceLine.status = 'Absent');
+  const aggregateLine = hasCourse.aggregateAttendance.find(
+    (aggregate) => aggregate.matricNumber == attendanceLine.matricNumber,
+  );
 
+  if (
+    (status == 'true' && attendanceLine.status == 'Absent') ||
+    (status == 'false' && attendanceLine.status == 'Present')
+  ) {
+    if (status == 'true') {
+      attendanceLine.status = 'Present';
+      aggregateLine.timesPresent++;
+    } else {
+      attendanceLine.status = 'Absent';
+      aggregateLine.timesPresent--;
+    }
+  }
   this.save();
 
   return attendanceRecord;
