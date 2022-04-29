@@ -51,6 +51,11 @@ const userSchema = new Schema({
                   date: { type: String, required: true },
                   token: { type: String, required: true },
                   tokenResetExpiration: { type: Date, required: true },
+                  coordinates: {
+                    lat: Number,
+                    lng: Number,
+                    accuracy: Number,
+                  },
                   attendance: [
                     {
                       name: String,
@@ -328,6 +333,27 @@ userSchema.methods.findAttendanceLine = async function (
   );
 
   return { attendanceLine, attendanceRecord };
+};
+
+userSchema.methods.findAttendanceRecord = async function (
+  sessionId,
+  progId,
+  courseId,
+  recordId,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+
+  const hasCourse = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  const attendanceRecord = hasCourse.attendanceRecords.find(
+    (record) => record._id == recordId,
+  );
+
+  return attendanceRecord;
 };
 
 userSchema.methods.markAttendance = async function (

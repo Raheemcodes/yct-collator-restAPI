@@ -44,7 +44,7 @@ router.post(
             new Date().toLocaleDateString(),
           )
         ) {
-          throw new Error(`One attendance per day for a course`);
+          throw new Error('One attendance per day for a course');
         }
 
         return true;
@@ -52,26 +52,6 @@ router.post(
     body(['hours', 'minutes'], 'Some fields are invalid').isNumeric(),
   ],
   attendanceController.createAttendance,
-);
-
-router.post(
-  '/student-attendance',
-  [
-    body(
-      ['userId', 'sessionId', 'progId', 'courseId', 'recordId'],
-      'Invalid Link',
-    )
-      .trim()
-      .isLength({ min: 12 })
-      .custom(async (value, { req }) => {
-        const userId = req.body.userId;
-
-        const user = await User.findById(userId);
-        if (!user) throw new Error('Invalid Link');
-        return true;
-      }),
-  ],
-  attendanceController.postStudentAttendance,
 );
 
 router.post(
@@ -144,6 +124,44 @@ router.post(
       }),
   ],
   attendanceController.modifyRecord,
+);
+
+router.post(
+  '/post-coordinates',
+  isAuth,
+  [
+    body(
+      ['sessionId', 'programmeId', 'courseId', 'attendanceRecordId'],
+      'INVALID_DETAILS',
+    )
+      .trim()
+      .isLength({ min: 12 })
+      .custom(async (value, { req }) => {
+        const user = await User.findById(req.userId);
+
+        if (!user)
+          throw new Error('USER_NOT_FOUND');
+        return true;
+      }),
+    body('coordinates').custom((value) => {
+      if (
+        typeof value['lat'] != 'number' ||
+        typeof value['lat'] != 'number' ||
+        !value['lat'] ||
+        !value['lng']
+      ) {
+        throw new Error('INVALID-COORD');
+      }
+      
+      if (value['accuracy'] && value['accuracy'] > 100) {
+        throw new Error(
+          'INACCURATE_LOCATION',
+        );
+      }
+      return true;
+    }),
+  ],
+  attendanceController.postCoordinate,
 );
 
 module.exports = router;

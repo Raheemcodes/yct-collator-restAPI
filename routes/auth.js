@@ -33,7 +33,7 @@ router.post(
     body('password', 'Password not strong')
       .trim()
       .isLength({ min: 8 })
-      .isAlphanumeric(),
+      .isStrongPassword(),
     body('confirmPassword').custom((value, { req }) => {
       if (value !== req.body.password) {
         throw new Error('Passwords have to match');

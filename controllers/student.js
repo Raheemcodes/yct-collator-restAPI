@@ -351,3 +351,88 @@ exports.webauthnLoginVerification = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.postStudentAttendance = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const error = new Error(errors.array()[0].msg);
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const userId = req.body.userId;
+    const sessionId = req.body.sessionId;
+    const progId = req.body.progId;
+    const courseId = req.body.courseId;
+    const recordId = req.body.recordId;
+    const token = req.body.token;
+    const coordinates = req.body.coordinates;
+
+    const user = await User.findById(userId);
+
+    const attendanceRecord = await user.findAttendanceRecord(
+      sessionId,
+      progId,
+      courseId,
+      recordId,
+    );
+
+    if (!attendanceRecord) {
+      const error = new Error('RECORD_NOT_FOUND');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    if (attendanceRecord.token !== token) {
+      const error = new Error('INVALID_TOKEN');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    if (new Date(attendanceRecord.tokenResetExpiration) < new Date()) {
+      const error = new Error('LINK_EXPIRED');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const getDistance = function (p1, p2) {
+      const rad = function (x) {
+        return (x * Math.PI) / 180;
+      };
+
+      const R = 6378137; // Earth’s mean radius in meter
+      const dLat = rad(p2.lat - p1.lat);
+      const dLong = rad(p2.lng - p1.lng);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(rad(p1.lat)) *
+          Math.cos(rad(p2.lat)) *
+          Math.sin(dLong / 2) *
+          Math.sin(dLong / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const d = R * c;
+      return d; // returns the distance in meter
+    };
+
+    const distance = getDistance(coordinates, attendanceRecord.coordinates);
+
+    console.log(distance);
+
+    if (distance > 50) {
+      const error = new Error(
+        "OUT_OF_BOUND",
+      );
+      error.statusCode = 401;
+      throw error;
+    }
+
+    res.status(201).send({ attendanceRecord });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
