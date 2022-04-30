@@ -207,6 +207,7 @@ userSchema.methods.createAttendance = async function (
   course,
   token,
   tokenResetExpiration,
+  coordinates
 ) {
   const foundSession = this.sessions.find((sess) => sess.title == session);
 
@@ -233,6 +234,7 @@ userSchema.methods.createAttendance = async function (
       token,
       tokenResetExpiration,
       attendance,
+      coordinates
     },
   ];
 

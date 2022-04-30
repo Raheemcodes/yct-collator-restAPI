@@ -1,9 +1,5 @@
 const crypto = require('crypto');
-const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
-const jwt = require('jsonwebtoken');
-const cbor = require('cbor');
-const { default: base64url } = require('base64url');
 
 const User = require('../models/User');
 
@@ -43,6 +39,7 @@ exports.createAttendance = async (req, res, next) => {
     const course = req.body.course;
     const minutes = req.body.minutes;
     const hours = req.body.hours;
+    const coordinates = req.body.coordinates;
     const user = await User.findById(req.userId);
 
     crypto.randomBytes(32, async (err, buf) => {
@@ -56,6 +53,7 @@ exports.createAttendance = async (req, res, next) => {
         course,
         token,
         tokenResetExpiration,
+        coordinates
       );
 
       res.status(201).send({ res: result, sessions: user.sessions });
@@ -188,49 +186,47 @@ exports.modifyRecord = async (req, res, next) => {
   }
 };
 
-exports.postCoordinate = async (req, res, next) => {
-  try {
-    const errors = validationResult(req);
+// exports.postCoordinate = async (req, res, next) => {
+//   try {
+//     const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      const error = new Error(errors.array()[0].msg);
-      error.statusCode = 422;
-      throw error;
-    }
+//     if (!errors.isEmpty()) {
+//       const error = new Error(errors.array()[0].msg);
+//       error.statusCode = 422;
+//       throw error;
+//     }
 
-    const sessionId = req.body.sessionId;
-    const programmeId = req.body.programmeId;
-    const courseId = req.body.courseId;
-    const recordId = req.body.attendanceRecordId;
-    const coordinates = req.body.coordinates;
-    const user = await User.findById(req.userId);
+//     const sessionId = req.body.sessionId;
+//     const programmeId = req.body.programmeId;
+//     const courseId = req.body.courseId;
+//     const recordId = req.body.attendanceRecordId;
+//     const coordinates = req.body.coordinates;
+//     const user = await User.findById(req.userId);
 
-    const attendanceRecord = await user.findAttendanceRecord(
-      sessionId,
-      programmeId,
-      courseId,
-      recordId,
-    );
+//     const attendanceRecord = await user.findAttendanceRecord(
+//       sessionId,
+//       programmeId,
+//       courseId,
+//       recordId,
+//     );
 
-    if (!attendanceRecord) {
-      const error = new Error('RECORD_NOT_FOUND');
-      error.statusCode = 401;
-      throw error;
-    }
+//     if (!attendanceRecord) {
+//       const error = new Error('RECORD_NOT_FOUND');
+//       error.statusCode = 401;
+//       throw error;
+//     }
 
-    attendanceRecord.coordinates = coordinates;
-    user.save();
+//     attendanceRecord.coordinates = coordinates;
+//     user.save();
 
-    res
-      .status(201)
-      .send({
-        res: { sessionId, programmeId, courseId, recordId },
-        sessions: user.sessions,
-      });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
+//     res.status(201).send({
+//       res: { sessionId, programmeId, courseId, recordId },
+//       sessions: user.sessions,
+//     });
+//   } catch (err) {
+//     if (!err.statusCode) {
+//       err.statusCode = 500;
+//     }
+//     next(err);
+//   }
+// };
