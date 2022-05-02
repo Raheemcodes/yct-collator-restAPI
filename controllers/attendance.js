@@ -141,8 +141,6 @@ exports.createRecord = async (req, res, next) => {
       totalStudent,
     );
 
-
-
     res.status(201).send({ sessions: user.sessions });
   } catch (err) {
     if (!err.statusCode) {
@@ -209,7 +207,7 @@ exports.modifyProgramme = async (req, res, next) => {
       throw error;
     }
 
-    await user.modifyProgramme(sessionId, programmeId, newTitle)
+    await user.modifyProgramme(sessionId, programmeId, newTitle);
 
     res.status(201).send({ sessions: user.sessions });
   } catch (err) {
@@ -242,7 +240,39 @@ exports.modifyCourse = async (req, res, next) => {
       throw error;
     }
 
-    user.modifyCourse(sessionId, programmeId, courseId, newTitle)
+    user.modifyCourse(sessionId, programmeId, courseId, newTitle);
+
+    res.status(201).send({ sessions: user.sessions });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteProgramme = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const error = new Error(errors.array()[0].msg);
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const sessionId = req.body.sessionId;
+    const programmeId = req.body.programmeId;
+
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      const error = new Error('User Not Found!');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    await user.deleteProgramme(sessionId, programmeId);
 
     res.status(201).send({ sessions: user.sessions });
   } catch (err) {

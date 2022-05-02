@@ -280,6 +280,26 @@ userSchema.methods.modifyProgramme = async function (
   this.save();
 };
 
+userSchema.methods.deleteProgramme = async function (sessionId, progId) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  if (!hasSession) {
+    const error = new Error('Record not found');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const updatedProg = hasSession.programmes.filter(
+    (prog) => prog._id != progId,
+  );
+
+  hasSession.programmes = updatedProg;
+
+  this.save();
+};
+
 userSchema.methods.modifyCourse = async function (
   sessionId,
   progId,

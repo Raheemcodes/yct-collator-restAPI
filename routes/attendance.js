@@ -163,6 +163,16 @@ router.post(
   attendanceController.modifyCourse,
 );
 
+router.post(
+  '/delete-programme',
+  isAuth,
+  [
+    body(['sessionId', 'programmeId'], 'Some fields are empty')
+      .trim()
+      .isLength({ min: 12 }),
+  ],
+  attendanceController.deleteProgramme,
+);
 // router.post(
 //   '/post-coordinates',
 //   isAuth,
