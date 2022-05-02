@@ -55,7 +55,7 @@ router.post(
         typeof value['lat'] != 'number' ||
         typeof value['lat'] != 'number' ||
         !value['lat'] ||
-        !value['lng'] 
+        !value['lng']
       ) {
         throw new Error('INVALID_COORD');
       }
@@ -119,7 +119,7 @@ router.post(
 );
 
 router.post(
-  '/modify-record',
+  '/add-record',
   isAuth,
   [
     body(
@@ -138,7 +138,29 @@ router.post(
         return true;
       }),
   ],
-  attendanceController.modifyRecord,
+  attendanceController.addRecord,
+);
+
+router.post(
+  '/modify-programme',
+  isAuth,
+  [
+    body(['sessionId', 'programmeId', 'newTitle'], 'Some fields are empty')
+      .trim()
+      .isLength({ min: 1 }),
+  ],
+  attendanceController.modifyProgramme,
+);
+
+router.post(
+  '/modify-course',
+  isAuth,
+  [
+    body(['sessionId', 'programmeId', 'courseId', 'newTitle'], 'Some fields are empty')
+      .trim()
+      .isLength({ min: 1 }),
+  ],
+  attendanceController.modifyCourse,
 );
 
 // router.post(

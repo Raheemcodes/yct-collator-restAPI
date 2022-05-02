@@ -207,7 +207,7 @@ userSchema.methods.createAttendance = async function (
   course,
   token,
   tokenResetExpiration,
-  coordinates
+  coordinates,
 ) {
   const foundSession = this.sessions.find((sess) => sess.title == session);
 
@@ -234,7 +234,7 @@ userSchema.methods.createAttendance = async function (
       token,
       tokenResetExpiration,
       attendance,
-      coordinates
+      coordinates,
     },
   ];
 
@@ -249,6 +249,57 @@ userSchema.methods.createAttendance = async function (
     courseId: foundCourse._id,
     attendanceRecordId: foundCourse.attendanceRecords[last]._id,
   };
+};
+
+userSchema.methods.modifyProgramme = async function (
+  sessionId,
+  progId,
+  newTitle,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+
+  const hasTitle = hasSession.programmes.some((prog) => prog.title == newTitle);
+
+  if (hasTitle) {
+    const error = new Error('This title exist');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const programme = hasSession.programmes.find((prog) => prog._id == progId);
+
+  if (!programme) {
+    const error = new Error('Editted programme not found');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  programme.title = newTitle;
+  this.save();
+};
+
+userSchema.methods.modifyCourse = async function (
+  sessionId,
+  progId,
+  courseId,
+  newTitle,
+) {
+  const hasSession = await this.sessions.find(
+    (session) => session._id == sessionId,
+  );
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+  const course = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  if (!course) {
+    const error = new Error('course not found');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  course.title = newTitle;
+  this.save();
 };
 
 userSchema.methods.findStudent = async function (
