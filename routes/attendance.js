@@ -160,7 +160,7 @@ router.post(
       .trim()
       .isLength({ min: 1 }),
   ],
-  attendanceController.modifyCourse,
+  attendanceController.modifyCourse
 );
 
 router.post(

@@ -192,6 +192,7 @@ userSchema.methods.addProgramme = async function (
       {
         title: course,
         students: students,
+        aggregateAttendance: aggregate,
       },
     ];
 
