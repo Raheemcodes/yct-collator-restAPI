@@ -122,11 +122,11 @@ exports.createRecord = async (req, res, next) => {
     const totalStudent = req.body.totalStudent;
     const user = await User.findById(req.userId);
 
-    const hasSession = (sessionTitle) => {
-      return user.sessions.find((session) => session.title == sessionTitle);
-    };
+    const hasSession = user.sessions.find(
+      (session) => session.title == sessionTitle,
+    );
 
-    if (hasSession(sessionTitle)) {
+    if (hasSession) {
       const error = new Error('This session already exists');
       error.statusCode = 401;
       throw error;
@@ -198,11 +198,11 @@ exports.modifyProgramme = async (req, res, next) => {
 
     const sessionId = req.body.sessionId;
     const programmeId = req.body.programmeId;
-    const newTitle = req.body.newTitle;
+    const newTitle = req.body.newTitle.toUpperCase();
     const user = await User.findById(req.userId);
 
     if (!user) {
-      const error = new Error('User Not Found!');
+      const error = new Error('USER_NOT_FOUND');
       error.statusCode = 401;
       throw error;
     }
@@ -230,17 +230,43 @@ exports.modifyCourse = async (req, res, next) => {
 
     const sessionId = req.body.sessionId;
     const programmeId = req.body.programmeId;
-    const courseId = req.body.courseId;
-    const newTitle = req.body.newTitle;
+    const courses = req.body.courses;
     const user = await User.findById(req.userId);
 
     if (!user) {
-      const error = new Error('User Not Found!');
+      const error = new Error('USER_NOT_FOUND');
       error.statusCode = 401;
       throw error;
     }
 
-    user.modifyCourse(sessionId, programmeId, courseId, newTitle);
+    const hasSession = await user.sessions.find(
+      (session) => session._id == sessionId,
+    );
+    const hasProgramme = await hasSession.programmes.find(
+      (prog) => prog._id == programmeId,
+    );
+
+    if (!hasSession || !hasProgramme) {
+      const error = new Error(`PROGRAMME_NOT_FOUND`);
+      error.statusCode = 401;
+      throw error;
+    }
+
+    await courses.forEach((course) => {
+      if (!course.newTitle.trim()) {
+        const error = new Error(`EMPTY_FIELD`);
+        error.statusCode = 401;
+        throw error;
+      }
+
+      user.modifyCourse(
+        sessionId,
+        programmeId,
+        course._id,
+        course.newTitle.toUpperCase().trim(),
+      );
+    });
+    user.save();
 
     res.status(201).send({ sessions: user.sessions });
   } catch (err) {
@@ -273,6 +299,71 @@ exports.deleteProgramme = async (req, res, next) => {
     }
 
     await user.deleteProgramme(sessionId, programmeId);
+
+    res.status(201).send({ sessions: user.sessions });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteCourse = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const error = new Error(errors.array()[0].msg);
+      error.statusCode = 422;
+      throw error;
+    }
+
+    const sessionId = req.body.sessionId;
+    const programmeId = req.body.programmeId;
+    const courses = req.body.courses;
+    const user = await User.findById(req.userId);
+
+    if (!user) {
+      const error = new Error('USER_NOT_FOUND');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const hasSession = await user.sessions.find(
+      (session) => session._id == sessionId,
+    );
+    const hasProgramme = await hasSession.programmes.find(
+      (prog) => prog._id == programmeId,
+    );
+
+    if (!hasSession || !hasProgramme) {
+      const error = new Error('PROGRAMME_NOT_FOUND');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    let updatedCourses = [...hasProgramme.courses];
+
+    courses.forEach(async (course, idx) => {
+      updatedCourses = user.deleteCourse(
+        sessionId,
+        programmeId,
+        course._id,
+        updatedCourses,
+      );
+    });
+
+    if (updatedCourses.length == 0) {
+      const updatedProg = hasSession.programmes.filter(
+        (prog) => prog._id != programmeId,
+      );
+      hasSession.programmes = updatedProg;
+    } else {
+      hasProgramme.courses = updatedCourses;
+    }
+
+    await user.save();
 
     res.status(201).send({ sessions: user.sessions });
   } catch (err) {

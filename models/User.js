@@ -81,7 +81,7 @@ const userSchema = new Schema({
   ],
 });
 
-userSchema.methods.addSession = async function (
+userSchema.methods.addSession = function (
   sessionTitle,
   program,
   course,
@@ -104,7 +104,7 @@ userSchema.methods.addSession = async function (
     aggregate.push(student);
   }
 
-  await this.sessions.push({
+   this.sessions.push({
     title: sessionTitle,
     programmes: [
       {
@@ -123,7 +123,7 @@ userSchema.methods.addSession = async function (
   this.save();
 };
 
-userSchema.methods.addProgramme = async function (
+userSchema.methods.addProgramme = function (
   sessionTitle,
   program,
   course,
@@ -202,7 +202,7 @@ userSchema.methods.addProgramme = async function (
   this.save();
 };
 
-userSchema.methods.createAttendance = async function (
+userSchema.methods.createAttendance = function (
   session,
   programme,
   course,
@@ -242,7 +242,7 @@ userSchema.methods.createAttendance = async function (
   foundCourse.attendanceRecords = attendanceRecords;
   const last = foundCourse.attendanceRecords.length - 1;
 
-  await this.save();
+   this.save();
 
   return {
     sessionId: foundSession._id,
@@ -252,19 +252,19 @@ userSchema.methods.createAttendance = async function (
   };
 };
 
-userSchema.methods.modifyProgramme = async function (
+userSchema.methods.modifyProgramme = function (
   sessionId,
   progId,
   newTitle,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 
   const hasTitle = hasSession.programmes.some((prog) => prog.title == newTitle);
 
   if (hasTitle) {
-    const error = new Error('This title exist');
+    const error = new Error('TITLE_EXIST');
     error.statusCode = 401;
     throw error;
   }
@@ -272,7 +272,7 @@ userSchema.methods.modifyProgramme = async function (
   const programme = hasSession.programmes.find((prog) => prog._id == progId);
 
   if (!programme) {
-    const error = new Error('Editted programme not found');
+    const error = new Error('PROG_NOT_FOUND');
     error.statusCode = 401;
     throw error;
   }
@@ -281,8 +281,8 @@ userSchema.methods.modifyProgramme = async function (
   this.save();
 };
 
-userSchema.methods.deleteProgramme = async function (sessionId, progId) {
-  const hasSession = await this.sessions.find(
+userSchema.methods.deleteProgramme = function (sessionId, progId) {
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 
@@ -301,36 +301,64 @@ userSchema.methods.deleteProgramme = async function (sessionId, progId) {
   this.save();
 };
 
-userSchema.methods.modifyCourse = async function (
+userSchema.methods.modifyCourse = function (
   sessionId,
   progId,
   courseId,
   newTitle,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
   const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
   const course = hasProgramme.courses.find((cour) => cour._id == courseId);
 
   if (!course) {
-    const error = new Error('course not found');
+    const error = new Error('COURSE_NOT_FOUND');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const hasTitle = hasProgramme.courses.some(
+    (course) => course.title == newTitle,
+  );
+
+  if (hasTitle) {
+    const error = new Error('TITLE_EXIST');
     error.statusCode = 401;
     throw error;
   }
 
   course.title = newTitle;
-  this.save();
 };
 
-userSchema.methods.findStudent = async function (
+userSchema.methods.deleteCourse = function (
+  sessionId,
+  progId,
+  courseId,
+  updatedCourses,
+) {
+  const hasSession = this.sessions.find((session) => session._id == sessionId);
+  const hasProgramme = hasSession.programmes.find((prog) => prog._id == progId);
+  const course = hasProgramme.courses.find((cour) => cour._id == courseId);
+
+  if (!course) {
+    const error = new Error('COURSE_NOT_FOUND');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return updatedCourses.filter((course) => course._id != courseId);
+};
+
+userSchema.methods.findStudent = function (
   sessionId,
   progId,
   courseId,
   matricNumber,
   clientDataJSON,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 
@@ -364,7 +392,7 @@ userSchema.methods.findStudent = async function (
   return student;
 };
 
-userSchema.methods.findAttendanceLine = async function (
+userSchema.methods.findAttendanceLine = function (
   sessionId,
   progId,
   courseId,
@@ -372,7 +400,7 @@ userSchema.methods.findAttendanceLine = async function (
   id,
   token,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 
@@ -409,13 +437,13 @@ userSchema.methods.findAttendanceLine = async function (
   return { attendanceLine, attendanceRecord };
 };
 
-userSchema.methods.findAttendanceRecord = async function (
+userSchema.methods.findAttendanceRecord = function (
   sessionId,
   progId,
   courseId,
   recordId,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 
@@ -430,7 +458,7 @@ userSchema.methods.findAttendanceRecord = async function (
   return attendanceRecord;
 };
 
-userSchema.methods.markAttendance = async function (
+userSchema.methods.markAttendance = function (
   sessionId,
   progId,
   courseId,
@@ -439,7 +467,7 @@ userSchema.methods.markAttendance = async function (
   status,
   token,
 ) {
-  const hasSession = await this.sessions.find(
+  const hasSession =  this.sessions.find(
     (session) => session._id == sessionId,
   );
 

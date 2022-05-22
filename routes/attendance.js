@@ -53,7 +53,7 @@ router.post(
     body('coordinates').custom((value) => {
       if (
         typeof value['lat'] != 'number' ||
-        typeof value['lat'] != 'number' ||
+        typeof value['lng'] != 'number' ||
         !value['lat'] ||
         !value['lng']
       ) {
@@ -145,7 +145,7 @@ router.post(
   '/modify-programme',
   isAuth,
   [
-    body(['sessionId', 'programmeId', 'newTitle'], 'Some fields are empty')
+    body(['sessionId', 'programmeId', 'newTitle'], 'EMPTY_FIELD')
       .trim()
       .isLength({ min: 1 }),
   ],
@@ -156,11 +156,16 @@ router.post(
   '/modify-course',
   isAuth,
   [
-    body(['sessionId', 'programmeId', 'courseId', 'newTitle'], 'Some fields are empty')
+    body(['sessionId', 'programmeId'], 'EMPTY_FIELD')
       .trim()
-      .isLength({ min: 1 }),
+      .isLength({ min: 1 })
+      .custom((value, { req }) => {
+        const courses = req.body.courses;
+        if (courses.length <= 0) throw new Error('COURSE_NOT_EDITTED');
+        return true;
+      }),
   ],
-  attendanceController.modifyCourse
+  attendanceController.modifyCourse,
 );
 
 router.post(
@@ -172,6 +177,22 @@ router.post(
       .isLength({ min: 12 }),
   ],
   attendanceController.deleteProgramme,
+);
+
+router.post(
+  '/delete-course',
+  isAuth,
+  [
+    body(['sessionId', 'programmeId'], 'EMPTY_FIELD')
+      .trim()
+      .isLength({ min: 1 })
+      .custom((value, { req }) => {
+        const courses = req.body.courses;
+        if (courses.length <= 0) throw new Error('COURSE_NOT_EDITTED');
+        return true;
+      }),
+  ],
+  attendanceController.deleteCourse,
 );
 // router.post(
 //   '/post-coordinates',
