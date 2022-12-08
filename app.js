@@ -10,19 +10,21 @@ const studentRoutes = require('./routes/student');
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
-  }),
+  })
 );
 
 app.use(express.json());
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', process.env.ACCESS_ORIGIN);
+  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_ADDRESS);
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'OPTIONS, GET, POST, PUT, PATCH, DELETE',
+    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
   );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
+
+  if (req.method === 'OPTIONS') res.sendStatus(204);
+  else next();
 });
 
 app.use(authRoutes);
@@ -42,7 +44,7 @@ mongoose
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-    },
+    }
   )
   .then(() => {
     console.log('Database connected succcessfully');
