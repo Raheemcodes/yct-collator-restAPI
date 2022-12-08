@@ -4,10 +4,15 @@ const jwt = require('jsonwebtoken');
 const cbor = require('cbor');
 const { default: base64url } = require('base64url');
 const { OAuth2Client } = require('google-auth-library');
+
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+
 const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
 const nodemailer = require('nodemailer');
 const { validationResult } = require('express-validator');
 
@@ -16,13 +21,33 @@ const { convertPublicKeyToPEM } = require('./../util/webauthn/convertPkToPem');
 const { verifySignature } = require('../util/webauthn/verifySignature');
 const User = require('../models/User');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.NODEMAIL_GMAIL,
-    pass: process.env.NODEMAILER_PASS,
-  },
-});
+async function sendMail(email, subject, mail) {
+  try {
+    const accessToken = await client.getAccessToken();
+    const transport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: process.env.NODEMAIL_GMAIL,
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken,
+      },
+    });
+
+    await transport.sendMail({
+      from: process.env.NODEMAIL_GMAIL,
+      to: email,
+      subject,
+      generateTextFromHTML: true,
+      html: mail,
+    });
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
+}
 
 exports.signup = async (req, res, next) => {
   try {
@@ -50,11 +75,10 @@ exports.signup = async (req, res, next) => {
 
     res.status(200).json({ message: 'Signup successful!', userId: user._id });
 
-    await transporter.sendMail({
-      to: email,
-      from: 'yraheem21@gmail.com',
-      subject: 'Singup suceeded!',
-      html: `
+    await sendMail(
+      email,
+      'Signup Suceeded!',
+      `
       <!DOCTYPE html>
       <html lang="en">
       <head>
@@ -97,11 +121,11 @@ exports.signup = async (req, res, next) => {
       </head>
       <body>
       <h1>You successfully signed up!</h1>
-      <a href="${REDIRECT_URI}">Login</a>
+      <a href="${req.protocol}://${req.get('host')}/login">Login</a>
       </body>
       </html>
-      `,
-    });
+      `
+    );
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -144,7 +168,7 @@ exports.login = async (req, res, next) => {
         userId: loadedUser._id.toString(),
       },
       'somesuperraheemsecret',
-      { expiresIn: '2h' },
+      { expiresIn: '2h' }
     );
 
     res.status(200).json({
@@ -210,7 +234,7 @@ exports.googleAuth = async (req, res, next) => {
         userId: loadedUser._id,
       },
       'somesuperraheemsecret',
-      { expiresIn: '2d' },
+      { expiresIn: '2d' }
     );
     res.status(200).json({
       email: loadedUser.email,
@@ -239,7 +263,7 @@ exports.webauthnReg = async (req, res, next) => {
     const id = req.body.userId;
     const user = await User.findById(id);
 
-    await crypto.randomBytes(32, (err, buf) => {
+    crypto.randomBytes(32, (err, buf) => {
       if (err) {
         throw err;
       }
@@ -334,7 +358,7 @@ exports.webauthnRegVerification = async (req, res, next) => {
     const credential = req.body.credential;
 
     const decodedClientData = base64url.decode(
-      credential.response.clientDataJSON,
+      credential.response.clientDataJSON
     );
     const clientDataJSON = JSON.parse(decodedClientData);
 
@@ -359,14 +383,14 @@ exports.webauthnRegVerification = async (req, res, next) => {
     }
 
     const attstObj = cbor.decodeFirstSync(
-      base64url.toBuffer(credential.response.attestationObject),
+      base64url.toBuffer(credential.response.attestationObject)
     );
 
     const { authData } = attstObj;
 
     if (authData.byteLength < 37) {
       throw new Error(
-        `Authenticator data was ${authData.byteLength} bytes, expected at least 37 bytes`,
+        `Authenticator data was ${authData.byteLength} bytes, expected at least 37 bytes`
       );
     }
 
@@ -375,7 +399,7 @@ exports.webauthnRegVerification = async (req, res, next) => {
     const credIDLenBuf = authData.slice(pointer, (pointer += 2));
     const credIDLen = credIDLenBuf.readUInt16BE(0);
     const credentialID = base64url(
-      authData.slice(pointer, (pointer += credIDLen)),
+      authData.slice(pointer, (pointer += credIDLen))
     );
     const credentialPublicKey = base64url(authData.slice(pointer));
 
@@ -413,7 +437,7 @@ exports.webauthnLogin = async (req, res, next) => {
 
       const publicKeyCredentialGetOptions = {
         challenge: base64url(
-          Uint8Array.from(challenge, (c) => c.charCodeAt(0)),
+          Uint8Array.from(challenge, (c) => c.charCodeAt(0))
         ),
 
         allowCredentials: [
@@ -444,7 +468,7 @@ exports.webauthnLoginVerification = async (req, res, next) => {
     const credential = req.body.credential;
 
     const decodedClientData = base64url.decode(
-      credential.response.clientDataJSON,
+      credential.response.clientDataJSON
     );
     const clientDataJSON = JSON.parse(decodedClientData);
 
@@ -469,15 +493,15 @@ exports.webauthnLoginVerification = async (req, res, next) => {
     }
 
     const authDataBuffer = base64url.toBuffer(
-      credential.response.authenticatorData,
+      credential.response.authenticatorData
     );
     const clientDataHash = toHash(
-      base64url.toBuffer(credential.response.clientDataJSON),
+      base64url.toBuffer(credential.response.clientDataJSON)
     );
 
     const signatureBase = Buffer.concat([authDataBuffer, clientDataHash]);
     const publicKey = convertPublicKeyToPEM(
-      base64url.toBuffer(user.webauthn.credentialPublicKey),
+      base64url.toBuffer(user.webauthn.credentialPublicKey)
     );
     const signature = base64url.toBuffer(credential.response.signature);
 
@@ -495,7 +519,7 @@ exports.webauthnLoginVerification = async (req, res, next) => {
         userId: user._id.toString(),
       },
       'somesuperraheemsecret',
-      { expiresIn: '2h' },
+      { expiresIn: '2h' }
     );
 
     res.status(201).send({

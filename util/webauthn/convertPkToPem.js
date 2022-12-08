@@ -1,6 +1,5 @@
-
-const cbor = require('cbor')
-const jwkToPem = require('jwk-to-pem')
+const cbor = require('cbor');
+const jwkToPem = require('jwk-to-pem');
 
 // import { COSEKEYS, COSEKTY, COSECRV } from './convertCOSEtoPKCS';
 
@@ -20,7 +19,9 @@ exports.convertPublicKeyToPEM = (publicKey) => {
   try {
     struct = cbor.decodeAllSync(publicKey)[0];
   } catch (err) {
-    throw new Error(`Error decoding public key while converting to PEM: ${err.message}`);
+    throw new Error(
+      `Error decoding public key while converting to PEM: ${err.message}`
+    );
   }
 
   const kty = struct.get(1);
@@ -77,4 +78,4 @@ exports.convertPublicKeyToPEM = (publicKey) => {
   }
 
   throw new Error(`Could not convert public key type ${kty} to PEM`);
-}
+};

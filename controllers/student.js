@@ -418,7 +418,7 @@ exports.postStudentAttendance = async (req, res, next) => {
 
     const distance = getDistance(coordinates, attendanceRecord.coordinates);
 
-    console.log(distance);
+    // console.log(distance);
 
     if (distance > 50) {
       const error = new Error(

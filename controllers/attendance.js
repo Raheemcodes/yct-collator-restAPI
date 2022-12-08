@@ -53,7 +53,7 @@ exports.createAttendance = async (req, res, next) => {
         course,
         token,
         tokenResetExpiration,
-        coordinates,
+        coordinates
       );
 
       res.status(201).send({ res: result, sessions: user.sessions });
@@ -92,7 +92,7 @@ exports.markAttendance = async (req, res, next) => {
       recordId,
       id,
       status,
-      token,
+      token
     );
 
     res.status(201).send({ sessions: user.sessions });
@@ -123,7 +123,7 @@ exports.createRecord = async (req, res, next) => {
     const user = await User.findById(req.userId);
 
     const hasSession = user.sessions.find(
-      (session) => session.title == sessionTitle,
+      (session) => session.title == sessionTitle
     );
 
     if (hasSession) {
@@ -138,7 +138,7 @@ exports.createRecord = async (req, res, next) => {
       course,
       firstMatric,
       indexNumber,
-      totalStudent,
+      totalStudent
     );
 
     res.status(201).send({ sessions: user.sessions });
@@ -174,7 +174,7 @@ exports.addRecord = async (req, res, next) => {
       course,
       firstMatric,
       indexNumber,
-      totalStudent,
+      totalStudent
     );
 
     res.status(201).send({ sessions: user.sessions });
@@ -240,10 +240,10 @@ exports.modifyCourse = async (req, res, next) => {
     }
 
     const hasSession = await user.sessions.find(
-      (session) => session._id == sessionId,
+      (session) => session._id == sessionId
     );
     const hasProgramme = await hasSession.programmes.find(
-      (prog) => prog._id == programmeId,
+      (prog) => prog._id == programmeId
     );
 
     if (!hasSession || !hasProgramme) {
@@ -263,7 +263,7 @@ exports.modifyCourse = async (req, res, next) => {
         sessionId,
         programmeId,
         course._id,
-        course.newTitle.toUpperCase().trim(),
+        course.newTitle.toUpperCase().trim()
       );
     });
     user.save();
@@ -331,10 +331,10 @@ exports.deleteCourse = async (req, res, next) => {
     }
 
     const hasSession = await user.sessions.find(
-      (session) => session._id == sessionId,
+      (session) => session._id == sessionId
     );
     const hasProgramme = await hasSession.programmes.find(
-      (prog) => prog._id == programmeId,
+      (prog) => prog._id == programmeId
     );
 
     if (!hasSession || !hasProgramme) {
@@ -350,13 +350,13 @@ exports.deleteCourse = async (req, res, next) => {
         sessionId,
         programmeId,
         course._id,
-        updatedCourses,
+        updatedCourses
       );
     });
 
     if (updatedCourses.length == 0) {
       const updatedProg = hasSession.programmes.filter(
-        (prog) => prog._id != programmeId,
+        (prog) => prog._id != programmeId
       );
       hasSession.programmes = updatedProg;
     } else {
@@ -373,48 +373,3 @@ exports.deleteCourse = async (req, res, next) => {
     next(err);
   }
 };
-
-// exports.postCoordinate = async (req, res, next) => {
-//   try {
-//     const errors = validationResult(req);
-
-//     if (!errors.isEmpty()) {
-//       const error = new Error(errors.array()[0].msg);
-//       error.statusCode = 422;
-//       throw error;
-//     }
-
-//     const sessionId = req.body.sessionId;
-//     const programmeId = req.body.programmeId;
-//     const courseId = req.body.courseId;
-//     const recordId = req.body.attendanceRecordId;
-//     const coordinates = req.body.coordinates;
-//     const user = await User.findById(req.userId);
-
-//     const attendanceRecord = await user.findAttendanceRecord(
-//       sessionId,
-//       programmeId,
-//       courseId,
-//       recordId,
-//     );
-
-//     if (!attendanceRecord) {
-//       const error = new Error('RECORD_NOT_FOUND');
-//       error.statusCode = 401;
-//       throw error;
-//     }
-
-//     attendanceRecord.coordinates = coordinates;
-//     user.save();
-
-//     res.status(201).send({
-//       res: { sessionId, programmeId, courseId, recordId },
-//       sessions: user.sessions,
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };

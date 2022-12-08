@@ -41,7 +41,7 @@ router.post(
       return true;
     }),
   ],
-  authController.signup,
+  authController.signup
 );
 
 router.post(
@@ -53,7 +53,7 @@ router.post(
       .withMessage('Please enter a valid email'),
     body('password', 'Password has to be valid').trim().not().isEmpty(),
   ],
-  authController.login,
+  authController.login
 );
 
 router.post(
@@ -71,12 +71,12 @@ router.post(
         return true;
       }),
   ],
-  authController.webauthnReg,
+  authController.webauthnReg
 );
 
 router.post(
   '/webauthn-reg-verification',
-  authController.webauthnRegVerification,
+  authController.webauthnRegVerification
 );
 
 router.post(
@@ -94,43 +94,14 @@ router.post(
         return userDoc;
       }),
   ],
-  authController.webauthnLogin,
+  authController.webauthnLogin
 );
 
 router.post(
   '/webauthn-login-verification',
-  [
-    check('email')
-      .isEmail()
-      .withMessage('Please enter a valid email')
-      .normalizeEmail()
-      .custom(async (value, { req }) => {
-        const userDoc = await User.findOne({ email: value });
-        if (!userDoc) {
-          return Promise.reject('E-mail does not exist!');
-        }
-        return userDoc;
-      }),
-  ],
-  authController.webauthnLoginVerification,
+  authController.webauthnLoginVerification
 );
 
-router.post(
-  '/google-auth',
-  [
-    check('email')
-      .isEmail()
-      .withMessage('Please enter a valid email')
-      .normalizeEmail()
-      .custom(async (value, { req }) => {
-        const userDoc = await User.findOne({ email: value });
-        if (!userDoc) {
-          return Promise.reject('E-mail does not exist!');
-        }
-        return userDoc;
-      }),
-  ],
-  authController.googleAuth,
-);
+router.post('/google-auth', authController.googleAuth);
 
 module.exports = router;
