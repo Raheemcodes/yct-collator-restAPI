@@ -28,10 +28,7 @@ app.use((req, res, next) => {
 
 app.use(authRoutes);
 app.use(attendanceRoutes);
-app.post('/student', (req, res) => {
-  console.log(req.body);
-  res.send({ message: 'succes' });
-});
+app.post('/student', studentRoutes);
 
 app.use((error, req, res, next) => {
   const status = error.statusCode || 500;
