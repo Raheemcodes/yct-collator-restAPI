@@ -12,7 +12,7 @@ app.use();
 app.use(express.json());
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_ADDRESS);
+  res.setHeader('Access-Control-Allow-Origin', process.env.ACCESS_ORIGIN);
   res.setHeader(
     'Access-Control-Allow-Methods',
     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
@@ -36,11 +36,7 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.u4041.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}`,
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
+    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.u4041.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}`
   )
   .then(() => {
     console.log('Database connected succcessfully');
