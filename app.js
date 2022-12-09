@@ -7,7 +7,7 @@ const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
 const studentRoutes = require('./routes/student');
 
-app.use();
+app.use(helmet());
 
 app.use(express.json());
 
