@@ -7,11 +7,7 @@ const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
 const studentRoutes = require('./routes/student');
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false,
-  })
-);
+app.use(helmet());
 
 app.use(express.json());
 
