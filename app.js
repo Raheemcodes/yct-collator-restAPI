@@ -35,6 +35,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
+  .set('strictQuery', false)
   .connect(
     `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.u4041.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}`
   )
