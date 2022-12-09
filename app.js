@@ -7,7 +7,11 @@ const authRoutes = require('./routes/auth');
 const attendanceRoutes = require('./routes/attendance');
 const studentRoutes = require('./routes/student');
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
 app.use(express.json());
 
@@ -19,8 +23,7 @@ app.use((req, res, next) => {
   );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') res.sendStatus(204);
-  else next();
+  next();
 });
 
 app.use(authRoutes);
