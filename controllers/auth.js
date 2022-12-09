@@ -138,43 +138,45 @@ exports.login = async (req, res, next) => {
   try {
     const errors = validationResult(req);
 
-    // if (!errors.isEmpty()) {
-    //   const error = new Error(errors.array()[0].msg);
-    //   error.statusCode = 422;
-    //   throw error;
-    // }
+    if (!errors.isEmpty()) {
+      const error = new Error(errors.array()[0].msg);
+      error.statusCode = 422;
+      throw error;
+    }
 
     const email = req.body.email;
     const password = req.body.password;
+    let loadedUser;
 
-    console.log(email, password);
-    // let loadedUser;
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      const error = new Error('Email not found');
+      error.statusCode = 401;
+      throw error;
+    }
+    loadedUser = user;
+    const isEqual = await bcrypt.compare(password, user.password);
+    if (!isEqual) {
+      const error = new Error('Wrong password!');
+      error.statusCode = 401;
+      throw error;
+    }
 
-    // const user = await User.findOne({ email: email });
-    // if (!user) {
-    //   const error = new Error('Email not found');
-    //   error.statusCode = 401;
-    //   throw error;
-    // }
-    // loadedUser = user;
-    // const isEqual = await bcrypt.compare(password, user.password);
-    // if (!isEqual) {
-    //   const error = new Error('Wrong password!');
-    //   error.statusCode = 401;
-    //   throw error;
-    // }
-
-    // const token = jwt.sign(
-    //   {
-    //     email: loadedUser.email,
-    //     userId: loadedUser._id.toString(),
-    //   },
-    //   'somesuperraheemsecret',
-    //   { expiresIn: '2h' }
-    // );
+    const token = jwt.sign(
+      {
+        email: loadedUser.email,
+        userId: loadedUser._id.toString(),
+      },
+      'somesuperraheemsecret',
+      { expiresIn: '2h' }
+    );
 
     res.status(200).json({
-      message: 'Success',
+      email: loadedUser.email,
+      name: loadedUser.name,
+      id: loadedUser._id.toString(),
+      token: token,
+      expiresIn: 7200,
     });
   } catch (err) {
     if (!err.statusCode) {
