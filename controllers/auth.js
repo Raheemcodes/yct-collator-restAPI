@@ -5,12 +5,13 @@ const cbor = require('cbor');
 const { default: base64url } = require('base64url');
 const { OAuth2Client } = require('google-auth-library');
 
-const CLIENT_ID = process.env.CLIENT_ID;
+const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID;
+const SIGNIN_CLIENT_ID = process.env.SIGNIN_CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
 
-const client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+const client = new OAuth2Client(GMAIL_CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 const nodemailer = require('nodemailer');
@@ -29,7 +30,7 @@ async function sendMail(email, subject, mail) {
       auth: {
         type: 'OAuth2',
         user: process.env.NODEMAIL_GMAIL,
-        clientId: CLIENT_ID,
+        clientId: GMAIL_CLIENT_ID,
         clientSecret: CLIENT_SECRET,
         refreshToken: REFRESH_TOKEN,
         accessToken,
@@ -154,6 +155,7 @@ exports.login = async (req, res, next) => {
       error.statusCode = 401;
       throw error;
     }
+
     loadedUser = user;
     const isEqual = await bcrypt.compare(password, user.password);
     if (!isEqual) {
@@ -200,7 +202,7 @@ exports.googleAuth = async (req, res, next) => {
 
     const ticket = await client.verifyIdToken({
       idToken: id_token,
-      audience: CLIENT_ID,
+      audience: SIGNIN_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
@@ -209,6 +211,7 @@ exports.googleAuth = async (req, res, next) => {
 
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 12);
+
       const user = new User({
         email: payload.email,
         name: payload.name,
@@ -236,6 +239,7 @@ exports.googleAuth = async (req, res, next) => {
       'somesuperraheemsecret',
       { expiresIn: '2d' }
     );
+
     res.status(200).json({
       email: loadedUser.email,
       name: loadedUser.name,
@@ -429,7 +433,7 @@ exports.webauthnLogin = async (req, res, next) => {
 
     const user = await User.findOne({ email });
 
-    await crypto.randomBytes(32, (err, buf) => {
+    crypto.randomBytes(32, (err, buf) => {
       const challenge = buf.toString('hex');
       user.webauthn.challenge = challenge;
       user.webauthn.resetChallengeExpiration = Date.now() + 60000;
